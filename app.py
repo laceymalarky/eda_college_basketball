@@ -1,158 +1,169 @@
 # %%
 import pandas as pd
-from matplotlib import pyplot as plt
+import numpy as np
 import streamlit as st
 import plotly.express as px
 
+# %% [markdown]
+# ### Initialization
 
 # %%
-# Load team data from https://barttorvik.com/trank.php#
-# http://barttorvik.com/2023_team_results.csv
+# Load data from url
+url = 'https://www.sports-reference.com/cbb/seasons/men/2023-ratings.html'
+html = pd.read_html(url, header=0, skiprows=1)
+df = html[0]
+# Deletes repeating headers in content
+raw = df.drop(df[(df.Rk == 'Rk') | (df.OSRS == 'SRS')].index)
+teamstats = raw.drop(['Rk', 'Unnamed: 3', 'Unnamed: 10',
+                     'Unnamed: 12'], axis=1)  # Deletes empty columns
 
-teams = pd.read_csv(
-    'http://barttorvik.com/2023_team_results.csv', index_col=False)
-teams2 = pd.read_csv('http://barttorvik.com/2023_fffinal.csv', index_col=False)
-teams2.head()
-
-
-# %%
-# Read Player data
-players_header = ['player_name', 'team', 'conf', 'GP', 'Min_per', 'ORtg', 'usg', 'eFG', 'TS_per', 'ORB_per', 'DRB_per', 'AST_per', 'TO_per',
-                  'FTM', 'FTA', 'FT_per', 'twoPM', 'twoPA', 'twoP_per', 'TPM', 'TPA', 'TP_per', 'blk_per', 'stl_per', 'ftr', 'yr', 'ht', 'num',
-                  'porpag', 'adjoe', 'pfr', 'year', 'pid', 'type', 'Rec Rank', ' ast/tov', ' rimmade', ' rimmade+rimmiss', ' midmade', ' midmade+midmiss',
-                  ' rimmade/(rimmade+rimmiss)', ' midmade/(midmade+midmiss)', ' dunksmade', ' dunksmiss+dunksmade', ' dunksmade/(dunksmade+dunksmiss)',
-                  ' pick', ' drtg', 'adrtg', ' dporpag', ' stops', ' bpm', ' obpm', ' dbpm', ' gbpm', 'mp', 'ogbpm', 'dgbpm', 'oreb', 'dreb', 'treb',
-                  'ast', 'stl', 'blk', 'pts']
-
-players = pd.read_csv('http://barttorvik.com/getadvstats.php?year=2023&csv=1',
-                      names=players_header, index_col=False)
-players.head()
+# %% [markdown]
+# ### Data Preprocessing
 
 # %%
-teams.head()
+# Set index to school name
+teamstats = teamstats.set_index('School')
 
 # %%
-# Filter dataframe for only certain cols
-teams = teams[['rank', 'team', 'conf', 'record', 'adjoe', 'adjde', 'barthag',
-               'sos', 'consos', 'Conf Win%', 'Fun Rk, adjt']]
+# Change data types
+teamstats = teamstats.astype({'W': 'int', 'L': 'int', 'Pts': 'float', 'Opp': 'float',
+                              'MOV': 'float', 'SOS': 'float', 'OSRS': 'float', 'DSRS': 'float', 'SRS': 'float',
+                              'ORtg': 'float', 'DRtg': 'float', 'NRtg': 'float'})
+# teamstats['AP Rank'] = round(teamstats['AP Rank'],0)
 
 # %%
-# List of unique conferences
-teams['conf'].unique()
+# Rename columns
+teamstats.columns = ['Conference', 'AP_rank', 'Wins', 'Losses', 'Points_per_game', 'Opponent_points_per_game', 'Margin_of_victory', 'Strength_of_schedule', 'Offensive_SRS', 'Defensive_SRS',
+                     'SRS', 'Adj_offensive_rating', 'Adj_defensive_rating', 'Adj_net_rating']
 
 # %%
-# creating header with an option to filter the data and the checkbox:
-# dataset includes all teams but this will let users decide whether they want
-# to see all teams or just those in the top 10 conferences
-
-st.header("2023 NCAA Men's Basketball Statistics")
-st.write("""
-##### T-Rank based on offensive and defensive efficiency from https://barttorvik.com/trank.php#
-""")
-st.write("""
-##### Filter the data below to see only team in the top 10 conferences
-""")
-conf_top_10 = st.checkbox('Top 10 Conferences Only')
-
-
-# %%
-conf_top_10
-
-# %%
-top10_conf = ['B12', 'SEC', 'B10', 'BE',
-              'P12', 'ACC', 'MWC', 'Amer', 'WCC', 'A10']
-
-if not conf_top_10:
-    teams = teams.query('conf in @top10_conf')
-
-
-# %%
-# Select box for Conference
-conf_choice = teams['conf'].unique()
-make_choice_conf = st.selectbox('Select team:', conf_choice)
-
-# %%
-# filtering dataset on chosen team and ...
-filtered_conf = teams[(teams.conf == make_choice_conf)]
-
-# %%
-# showing the final table in streamlit
-st.table(filtered_conf)
-
-# %%
-# Add rank grouping
+# Classify top 25 and unranked groups
 
 
 def rank_group(rank):
-    if rank <= 25:
-        return 'Top 25'
-    elif rank <= 100:
-        return '26 - 100'
-    elif rank <= 200:
-        return '101 - 200'
+    if rank is np.NaN:
+        return 'Unranked'
     else:
-        return '201 +'
+        return 'Top 25'
 
+
+# Add new col to dataframe
+teamstats['Ranking'] = teamstats['AP_rank'].apply(rank_group)
 
 # %%
-# Add col to data with rank group
-teams['rank_desc'] = teams['rank'].apply(rank_group)
+# creating header with an option to filter the data with a checkbox:
+# dataset includes all teams but this will let users decide whether they want
+# to see all teams or just those in the AP Poll's top 25
 
-# %%
-st.header('Team analyis by rank')
-st.write("""
-###### Now let's check how price is affected by odometer, engine capacity or number of photos in the adds
+st.header("2022-23 Men's College Basketball Ratings")
+st.markdown("""
+* **Data Source:** https://www.sports-reference.com
 """)
 
-# Distribution of price depending on odometer_value,engine_capacity,number_of_photos
-# with the split by age category
+ranked = st.checkbox('Filter the page to only include AP Top 25 Teams')
 
-# list_for_scatter=['odometer_value','engine_capacity','number_of_photos']
-# choice_for_scatter = st.selectbox('Price dependency on ', list_for_scatter)
-fig1 = px.scatter(teams, x="adjoe", y='adjde',
-                  hover_data=['team'], color='rank_desc')
+if ranked:
+    teamstats = teamstats[teamstats.Ranking == 'Top 25']
+
+
+# %% [markdown]
+# ### Data Table
+
+# %%
+# Create data table filterable by conference
+
+# creating options for filter from all conferences
+conference_choice = list(teamstats['Conference'].unique())
+
+conference_choice_all = []
+conference_choice_all = conference_choice[:]
+conference_choice_all.append('All')
+
+# conference_dropdown = st.multiselect('Conference: ', conference_choice_all)
+conference_dropdown = st.selectbox(
+    'Conference: ', conference_choice_all, index=len(conference_choice_all)-1)
+
+# filtering dataset on chosen conference
+if 'All' in conference_dropdown:
+    filtered_conf = teamstats[teamstats.Conference.isin(conference_choice_all)]
+else:
+    filtered_conf = teamstats[teamstats.Conference == conference_dropdown]
+
+st.header('Display Team Stats for Selected Conference(s)')
+st.write('Data Dimensions: ' +
+         str(filtered_conf.shape[0]) + ' rows and ' + str(filtered_conf.shape[1]) + ' columns.')
+st.dataframe(filtered_conf)
+
+# %% [markdown]
+# ### Scatterplot
+
+# %%
+st.header('Compare Offensive and Defensive Ratings')
+st.write("""
+###### Analyze offensive and defensive ratings for unranked and top 25 teams
+""")
+
+fig1 = px.scatter(teamstats, x="Offensive_SRS", y='Defensive_SRS',
+                  hover_data=[teamstats.index], color='Ranking')
 
 fig1.update_layout(
-    title="<b> Offense vs Defense</b>")
+    title="<b> Simple Rating System (SRS) split into offensive and defensive components</b>")
 st.plotly_chart(fig1)
 
-# %%
-# data_top10_conf.boxplot(column = 'rank', by = 'conf')
+# %% [markdown]
+# ### Histogram
 
 # %%
-st.header('Player analysis')
+st.header('Compare Ratings by Conference')
 st.write("""
-###### Let's analyze what influences price the most. We will check how distibution of price varies depending on 
-transmission, engine or body type and state
+###### Select multiple conferences to compare
 """)
 
-# creating options for filter from all teams
-team_choice = teams['team'].unique()
-make_choice_team1 = st.selectbox('Select team 1:', team_choice)
-make_choice_team2 = st.selectbox('Select team 2:', team_choice)
+# create multiselect for conferences
+comparison = st.multiselect(
+    'Conferences to compare: ', conference_choice_all, default='All')
 
-# filtering dataset on chosen team and ...
-filtered_team = players[(players['team'] == make_choice_team1) | (
-    players['team'] == make_choice_team2)]
+# filtering dataset on chosen conference
+if 'All' in comparison:
+    filtered_comp = teamstats[teamstats.Conference.isin(conference_choice_all)]
+else:
+    filtered_comp = teamstats[teamstats.Conference.isin(comparison)]
 
-# Will create histograms with the split by parameter of choice: color, transmission, engine_type, body_type, state
 
 # creating list of options to choose from
-list_for_hist = [' bpm', ' obpm', ' dbpm', ' gbpm', 'mp', 'ogbpm',
-                 'dgbpm', 'oreb', 'dreb', 'treb', 'ast', 'stl', 'blk', 'pts']
+list_for_hist = ['Points_per_game', 'Opponent_points_per_game', 'Margin_of_victory', 'Strength_of_schedule', 'Offensive_SRS', 'Defensive_SRS',
+                 'SRS', 'Adj_offensive_rating', 'Adj_defensive_rating', 'Adj_net_rating']
 
 # creating selectbox
-choice_for_hist = st.selectbox('Player Metrics', list_for_hist)
+choice_for_hist = st.selectbox('Select a Metric', list_for_hist)
 
-# plotly histogram, where price_usd is split by the choice made in the selectbox
-fig3 = px.histogram(filtered_team, x=choice_for_hist, color='team')
+# plotly histogram by selected metric  split by the choice of conferences in selectbox, ALL by default
+fig2 = px.histogram(filtered_comp, x=choice_for_hist, color='Conference')
 
 # adding tittle
-fig3.update_layout(
-    title="<b> Split of price by {}</b>".format(choice_for_hist))
+fig2.update_layout(
+    title="<b> {} split by Selected Conferences</b>".format(choice_for_hist))
 
 # embedding into streamlit
-st.plotly_chart(fig3)
+st.plotly_chart(fig2)
+
+# %% [markdown]
+# ### Glossary
+
+# %%
+# Add glossary of terms
+st.text("""
+###### Glossary:
+* Simple Rating System (SRS):
+    * A rating that takes into account average point differential and strength of schedule, separated into offensive and defensive components. The rating is denominated in points above/below average, where zero is average.
+* Adjusted Rating:
+    * A rating adjusted for strength of opposition.
+    * Offensive Rating - an estimate of points scored (for teams) or points produced (for players) per 100 possessions.
+    * Defensive Rating - an estimate of points allowed per 100 possessions.
+    * Net Rating - an estimate of point differential per 100 possessions.
+
+*Non-Division I games are excluded from the ratings.*
+""")
 
 # %%
 # cd git_projects/practicum_sprint4_project
