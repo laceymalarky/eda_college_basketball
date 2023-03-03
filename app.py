@@ -10,7 +10,6 @@ import plotly.express as px
 import lxml
 from datetime import date
 
-
 # %% [markdown]
 # ### Load data
 
@@ -39,7 +38,9 @@ teamstats = teamstats.set_index('School')
 teamstats = teamstats.astype({'W': 'int', 'L': 'int', 'Pts': 'float', 'Opp': 'float',
                               'MOV': 'float', 'SOS': 'float', 'OSRS': 'float', 'DSRS': 'float', 'SRS': 'float',
                               'ORtg': 'float', 'DRtg': 'float', 'NRtg': 'float'})
-# teamstats['AP Rank'] = round(teamstats['AP Rank'],0)
+
+# convert rank column to float to allow for sorting in final table
+teamstats['AP Rank'] = teamstats['AP Rank'].astype(float)
 
 # %%
 # Rename columns
@@ -70,7 +71,7 @@ teamstats['Ranking'] = teamstats['AP_rank'].apply(rank_group)
 
 st.title(f"{year-1}-{year} Men's College Basketball Ratings")
 st.markdown("""
-This app performs web scraping of NCAA men's basketball team statistics for the current season.
+This app performs web scraping of NCAA Division I men's basketball team statistics for the current season.
 * **Data Source:** https://www.sports-reference.com/cbb/
 * **Definitions:**
     * **Simple Rating System (SRS)** takes into account average point differential and strength of schedule, separated into offensive and defensive components. The rating is denominated in points above/below average, where zero is average.
@@ -119,7 +120,7 @@ st.dataframe(filtered_conf)
 # %%
 st.header('Compare Offensive and Defensive Ratings')
 st.write("""
-###### Analyze Simple Rating System (SRS) split into offensive and defensive components for unranked and top 25 teams
+###### Analyze the Simple Rating System (SRS) split into offensive and defensive components for unranked and top 25 teams
 """)
 
 fig1 = px.scatter(teamstats, x="Offensive_SRS", y='Defensive_SRS',
