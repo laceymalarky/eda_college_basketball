@@ -16,7 +16,6 @@ from datetime import date
 # Web scrape html from url to get NCAA ratings for the current season
 today = date.today()
 year = today.year
-print(year)
 
 url = ('https://www.sports-reference.com/cbb/seasons/men/{}-ratings.html').format(year)
 html = pd.read_html(url, header=0, skiprows=1)
