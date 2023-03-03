@@ -25,32 +25,7 @@ teamstats = teamstats.set_index('School')
 teamstats = teamstats.astype({'W': 'int', 'L': 'int', 'Pts': 'float', 'Opp': 'float',
                               'MOV': 'float', 'SOS': 'float', 'OSRS': 'float', 'DSRS': 'float', 'SRS': 'float',
                               'ORtg': 'float', 'DRtg': 'float', 'NRtg': 'float'})
-
-
-# %% [markdown]
-# **Glossary**
-# Rk -- Rank
-# School -- * = NCAA Tournament appearance
-# Conf -- Conferenceerence
-# W -- Wins
-# L -- Losses
-# Pts -- Points Per Game
-# Opp -- Opponent Points Per Game
-# MOV -- Margin of Victory
-# A team's average margin of victory over a period or season
-# SOS -- Strength of Schedule
-# A rating of strength of schedule. The rating is denominated in points above/below average, where zero is average. Non-Division I games are excluded from the ratings.
-# SRS --Simple Rating System; a rating that takes into account average point differential and strength of schedule. The rating is denominated in points above/below average, where zero is average. Non-Division I games are excluded from the ratings.
-# OSRS -- The offensive component of the Simple Rating System (SRS), a rating that takes into account average point differential and strength of schedule. The rating is denominated in points above/below average, where zero is average. Non-Division I games are excluded from the ratings.
-# DSRS -- The defensive component of the Simple Rating System (SRS), a rating that takes into account average point differential and strength of schedule. The rating is denominated in points above/below average, where zero is average. Non-Division I games are excluded from the ratings.
-#
-# SRS -- Simple Rating System
-# A rating that takes into account average point differential and strength of schedule. The rating is denominated in points above/below average, where zero is average. Non-Division I games are excluded from the ratings.
-# Adjusted
-# ORtg -- Offensive Rating
-# An estimate of points scored (for teams) or points produced (for players) per 100 possessions.
-# DRtg -- Defensive Rating; an estimate of points allowed per 100 possessions.
-# NRtg -- Net Rating; an estimate of point differential per 100 possessions.
+# teamstats['AP Rank'] = round(teamstats['AP Rank'],0)
 
 # %%
 teamstats.columns = ['Conference', 'AP_rank', 'Wins', 'Losses', 'Points_per_game', 'Opponent_points_per_game', 'Margin_of_victory', 'Strength_of_schedule', 'Offensive_SRS', 'Defensive_SRS',
@@ -89,39 +64,27 @@ if ranked:
 
 # %%
 
-# creating options for filter  from all manufacturers and different years
+# creating options for filter from all conferences
 conference_choice = list(teamstats['Conference'].unique())
 
-# l2 = []
-# l2 = conference_choice[:]
-# l2.append('All')
-# conference_dropdown = st.multiselect('Conference: ', l2)
+conference_choice_all = []
+conference_choice_all = conference_choice[:]
+conference_choice_all.append('All')
 
-# if 'All' in conference_dropdown :
-# conference_dropdown=conference_choice
+# conference_dropdown = st.multiselect('Conference: ', conference_choice_all)
+conference_dropdown = st.selectbox(
+    'Conference: ', conference_choice_all, index=len(conference_choice_all)-1)
 
-# st.write(conference_dropdown)
+# filtering dataset on chosen conference
+if 'All' in conference_dropdown:
+    filtered_conf = teamstats[teamstats.Conference.isin(conference_choice_all)]
+else:
+    filtered_conf = teamstats[teamstats.Conference == conference_dropdown]
 
-make_choice_conf = st.selectbox('Select conference:', conference_choice)
-
-# filtering dataset on chosen manufacturer and chosen year range
-filtered_conf = teamstats[(teamstats.Conference == make_choice_conf)]
-
-st.header('Display Team Stats of Selected Conference')
+st.header('Display Team Stats for Selected Conference(s)')
 st.write('Data Dimensions: ' +
          str(filtered_conf.shape[0]) + ' rows and ' + str(filtered_conf.shape[1]) + ' columns.')
 st.dataframe(filtered_conf)
-st.markdown("""
-###### Glossary:
-* SRS -- Simple Rating System:
-    * A rating that takes into account average point differential and strength of schedule, separated into offensive and defensive components. The rating is denominated in points above/below average, where zero is average. 
-* Adjusted:
-    * A rating adjusted for strength of opposition.
-    * Offensive Rating - an estimate of points scored (for teams) or points produced (for players) per 100 possessions.
-    * Defensive Rating - an estimate of points allowed per 100 possessions.
-    * Net Rating - an estimate of point differential per 100 possessions
-**Non-Division I games are excluded from the ratings.**
-""")
 
 
 # %%
@@ -175,6 +138,20 @@ fig2.update_layout(
 
 # embedding into streamlit
 st.plotly_chart(fig2)
+
+# %%
+st.markdown("""
+###### Glossary:
+* Simple Rating System (SRS):
+    * A rating that takes into account average point differential and strength of schedule, separated into offensive and defensive components. The rating is denominated in points above/below average, where zero is average. 
+* Adjusted:
+    * A rating adjusted for strength of opposition.
+    * Offensive Rating - an estimate of points scored (for teams) or points produced (for players) per 100 possessions.
+    * Defensive Rating - an estimate of points allowed per 100 possessions.
+    * Net Rating - an estimate of point differential per 100 possessions
+
+**Non-Division I games are excluded from the ratings.**
+""")
 
 # %%
 # cd git_projects/practicum_sprint4_project
