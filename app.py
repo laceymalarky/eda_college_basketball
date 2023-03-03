@@ -39,8 +39,6 @@ teamstats = teamstats.astype({'W': 'int', 'L': 'int', 'Pts': 'float', 'Opp': 'fl
                               'MOV': 'float', 'SOS': 'float', 'OSRS': 'float', 'DSRS': 'float', 'SRS': 'float',
                               'ORtg': 'float', 'DRtg': 'float', 'NRtg': 'float'})
 
-# convert rank column to float to allow for sorting in final table
-teamstats['AP Rank'] = teamstats['AP Rank'].astype(float)
 
 # %%
 # Rename columns
@@ -52,10 +50,10 @@ teamstats.columns = ['Conference', 'AP_rank', 'Wins', 'Losses', 'Points_per_game
 
 
 def rank_group(rank):
-    if rank <= 25:
-        return 'Top 25'
-    else:
+    if rank is np.nan:
         return 'Unranked'
+    else:
+        return 'Top 25'
 
 
 # Add new col to dataframe
