@@ -52,10 +52,10 @@ teamstats.columns = ['Conference', 'AP_rank', 'Wins', 'Losses', 'Points_per_game
 
 
 def rank_group(rank):
-    if rank is np.NaN:
-        return 'Unranked'
-    else:
+    if rank <= 25:
         return 'Top 25'
+    else:
+        return 'Unranked'
 
 
 # Add new col to dataframe
