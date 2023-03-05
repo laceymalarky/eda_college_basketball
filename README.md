@@ -6,4 +6,4 @@ This app performs simple web scraping of NCAA Division I men's basketball team s
 
 To launch this project on a local machine, run `streamlit run app.py` in the project's root directory.
 
-Access this app on render: https://eda-college-basketball.onrender.com
+**Access this app on render:** https://eda-college-basketball.onrender.com
